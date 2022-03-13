@@ -9,7 +9,7 @@ import time
 
 
 num_components = 4;
-
+    
 
 
 def traditional_mul_replacement(in_a, in_b):
@@ -72,14 +72,13 @@ class Net(torch.nn.Module):
 
 
 net = Net()
-#net.load_state_dict(torch.load("model_weights.pth"))
 
 #print(net)
 optimizer = torch.optim.Adam(net.parameters(), lr=0.0005)
 loss_func = torch.nn.MSELoss()
 
 
-for epoch in range(1000):
+for epoch in range(100000):
 
   batch = torch.rand((100,num_components*2),dtype=torch.float32) * 2 - 1
   batch = normalize_batch(batch)
