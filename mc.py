@@ -1,9 +1,16 @@
 import numpy as np
 import math
+import torch
+import os.path
+
 from numpy import random
 from skimage import measure
+from torch.autograd import Variable
+from os import path
 
 
+
+num_components = 4 # quaternions
 
 class quaternion:
     x = 0;
@@ -23,6 +30,35 @@ def quat_mul(left, right):
     ret.w = left.x*right.w + left.y*right.z - left.z*right.y + left.w*right.x;
 
     return ret;
+
+def quat_mul_ai(left, right):
+
+    ret = quaternion();
+
+    batch = torch.zeros(num_components*2)
+    batch[0] = left.x
+    batch[1] = left.y
+    batch[2] = left.z
+    batch[3] = left.w
+
+    batch[4] = right.x
+    batch[5] = right.y
+    batch[6] = right.z
+    batch[7] = right.w
+
+#    print(batch)
+
+    prediction = net(batch).detach().numpy()
+
+    ret.x = prediction[0];
+    ret.y = prediction[1];
+    ret.z = prediction[2];    ret.w = prediction[3];
+
+
+#    print(prediction)
+
+    return ret;
+
 
 def quat_add(left, right):
     ret = quaternion();
@@ -53,6 +89,36 @@ def iterate(Z):
     
     return magnitude(Z);
 
+
+
+class Net(torch.nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.hidden1 = torch.nn.Linear(num_components*2, 32*num_components)
+        self.hidden2 = torch.nn.Linear(32*num_components, 16*num_components) 
+        self.hidden3 = torch.nn.Linear(16*num_components, 8*num_components)
+        self.predict = torch.nn.Linear(8*num_components, num_components)
+
+    def forward(self, x):
+        x = torch.tanh(self.hidden1(x))      
+        x = torch.tanh(self.hidden2(x))
+        x = torch.tanh(self.hidden3(x))
+        x = self.predict(x)             # linear output
+        return x
+
+
+
+
+
+net = Net()
+
+if path.exists('weights_4_100000.pth'):
+    net.load_state_dict(torch.load('weights_4_100000.pth'))
+    print("loaded file successfully")
+else:
+    print("Could not find file...")
+    exit()
+          
 
 
 
