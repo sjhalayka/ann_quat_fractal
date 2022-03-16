@@ -2,13 +2,14 @@ import numpy as np
 import math
 import torch
 import os.path
+import time
 
 from numpy import random
 from skimage import measure
 from torch.autograd import Variable
 from os import path
 
-device = "cpu"#torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
 
@@ -117,7 +118,7 @@ else:
 
 
 
-
+t0 = time.perf_counter()
 
 
 
@@ -193,6 +194,12 @@ for i in range(z_res):
             Z.x += x_step_size;
 
     Z.z += z_step_size;
+
+
+
+t1 = time.perf_counter()
+
+print("Time elapsed: ", t1 - t0)
 
 
 
