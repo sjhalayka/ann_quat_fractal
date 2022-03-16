@@ -38,7 +38,7 @@ class quaternion:
 
 
 num_components = 4; # quaternions
-res = 100;
+res = 25;
 
 x_grid_max = 1.5;
 y_grid_max = 1.5;
@@ -102,7 +102,7 @@ class Net(torch.nn.Module):
 
 
 
-net = Net().to(device)
+net = Net()
 
 if path.exists('weights_4_100000.pth'):
     net.load_state_dict(torch.load('weights_4_100000.pth'))
@@ -129,7 +129,7 @@ for i in range(z_res):
 
     Z.x = x_grid_min;
 
-    #print("init")
+    print("init")
     
     for j in range(x_res):
 
@@ -152,14 +152,11 @@ for i in range(z_res):
 
         Z.x += x_step_size;
 
-    #print("done init")
-
-
-    float_slice_magnitude = np.zeros((res, res), dtype=np.float32);
+    print("done init")
 
     for m in range(max_iterations):
 
-        #print(m);
+        print(m);
 
         p = net(float_slice).detach().numpy();
 
@@ -178,25 +175,24 @@ for i in range(z_res):
                 p[index][2] += C.z;
                 p[index][3] += C.w;
 
-                float_slice_magnitude[j][k] = math.sqrt(p[index][0]*p[index][0] + p[index][1]*p[index][1] + p[index][2]*p[index][2] + p[index][3]*p[index][3]);
+                float_array[i][j][k] = math.sqrt(p[index][0]*p[index][0] + p[index][1]*p[index][1] + p[index][2]*p[index][2] + p[index][3]*p[index][3]);
                 
-                float_slice[index][0] = torch.from_numpy(p)[index][0];
-                float_slice[index][1] = torch.from_numpy(p)[index][1];
-                float_slice[index][2] = torch.from_numpy(p)[index][2];
-                float_slice[index][3] = torch.from_numpy(p)[index][3];
-                float_slice[index][4] = torch.from_numpy(p)[index][0];
-                float_slice[index][5] = torch.from_numpy(p)[index][1];
-                float_slice[index][6] = torch.from_numpy(p)[index][2];
-                float_slice[index][7] = torch.from_numpy(p)[index][3];
+                tp = torch.from_numpy(p);
+
+                float_slice[index][0] = tp[index][0];
+                float_slice[index][1] = tp[index][1];
+                float_slice[index][2] = tp[index][2];
+                float_slice[index][3] = tp[index][3];
+                float_slice[index][4] = tp[index][0];
+                float_slice[index][5] = tp[index][1];
+                float_slice[index][6] = tp[index][2];
+                float_slice[index][7] = tp[index][3];
   
                 Z.y += y_step_size;
 
             Z.x += x_step_size;
 
     Z.z += z_step_size;
-
-    float_array[i] = float_slice_magnitude;
-
 
 
 
