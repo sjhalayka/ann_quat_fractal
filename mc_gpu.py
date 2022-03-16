@@ -38,7 +38,7 @@ class quaternion:
 
 
 num_components = 4; # quaternions
-res = 25;
+res = 100;
 
 x_grid_max = 1.5;
 y_grid_max = 1.5;
@@ -73,8 +73,8 @@ Z.w = z_w;
 
 
 
-float_slice = torch.zeros((res* res, 2*num_components), dtype=torch.float32);
-float_array = np.zeros((res, res, res), dtype = np.float32);
+float_slice = torch.empty((res* res, 2*num_components), dtype=torch.float32);
+float_array = np.empty((res, res, res), dtype = np.float32);
 
 
 
@@ -129,7 +129,7 @@ for i in range(z_res):
 
     Z.x = x_grid_min;
 
-    print("init")
+    #print("init")
     
     for j in range(x_res):
 
@@ -152,14 +152,14 @@ for i in range(z_res):
 
         Z.x += x_step_size;
 
-    print("done init")
+    #print("done init")
 
 
     float_slice_magnitude = np.zeros((res, res), dtype=np.float32);
 
     for m in range(max_iterations):
 
-        print(m);
+        #print(m);
 
         p = net(float_slice).detach().numpy();
 
