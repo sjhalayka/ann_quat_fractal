@@ -74,7 +74,7 @@ Z.w = z_w;
 
 
 
-float_slice = torch.empty((res* res, 2*num_components), dtype=torch.float32);
+float_slice = torch.empty((res* res, 2*num_components), dtype=torch.float32).to(device);
 float_array = np.empty((res, res, res), dtype = np.float32);
 
 
@@ -103,7 +103,7 @@ class Net(torch.nn.Module):
 
 
 
-net = Net()
+net = Net().to(device)
 
 if path.exists('weights_4_100000.pth'):
     net.load_state_dict(torch.load('weights_4_100000.pth'))
@@ -159,7 +159,8 @@ for i in range(z_res):
 
         print(m);
 
-        p = net(float_slice).detach().numpy();
+        float_slice.to(device)
+        p = net(float_slice).cpu().detach().numpy();
 
         Z.x = x_grid_min;
 
