@@ -2,14 +2,15 @@ import numpy as np
 import math
 import torch
 import os.path
+import time
 
 from numpy import random
 from skimage import measure
 from torch.autograd import Variable
 from os import path
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+device = "cpu"#torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("using device: " + str(device))
 
 
 
@@ -34,8 +35,12 @@ class quaternion:
     def __str__(self): 
         return str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ", " + str(self.w);
 
+
+
+
+
 num_components = 4; # quaternions
-res = 1000;
+res = 25;
 
 x_grid_max = 1.5;
 y_grid_max = 1.5;
@@ -71,33 +76,15 @@ Z.w = z_w;
 
 
 
-float_slice_a = torch.zeros((res* res, num_components), dtype=torch.float32).to(device);
-float_slice_b = torch.zeros((res* res, num_components), dtype=torch.float32).to(device);
+float_slice_a = torch.zeros((res* res, num_components), dtype=torch.float32)#.to(device);
+float_slice_b = torch.zeros((res* res, num_components), dtype=torch.float32)#.to(device);
 float_array = np.zeros((res, res, res), dtype = np.float32);
 
 
-
-
 def get_predictions():
-
-    batch = torch.zeros((res*res, num_components*2), dtype=torch.float32).to(device);
-
-    for i in range(res):
-        for j in range(res):
-            batch[i*res + j][0] = float_slice_a[i*res + j][0];
-            batch[i*res + j][1] = float_slice_a[i*res + j][1];
-            batch[i*res + j][2] = float_slice_a[i*res + j][2];
-            batch[i*res + j][3] = float_slice_a[i*res + j][3];
-            batch[i*res + j][4] = float_slice_b[i*res + j][0];
-            batch[i*res + j][5] = float_slice_b[i*res + j][1];
-            batch[i*res + j][6] = float_slice_b[i*res + j][2];
-            batch[i*res + j][7] = float_slice_b[i*res + j][3];
-
-    batch.to(device)
-
-    return net(batch).cpu().detach().numpy();
-
-
+    batch = torch.cat((float_slice_a, float_slice_b), 1)
+    #batch.to(device)
+    return net(batch).detach().numpy();
 
 
 
@@ -120,7 +107,7 @@ class Net(torch.nn.Module):
 
 
 
-net = Net().to(device)
+net = Net()#.to(device)
 
 if path.exists('weights_4_100000.pth'):
     net.load_state_dict(torch.load('weights_4_100000.pth'))
@@ -133,9 +120,23 @@ else:
 
 
 
+t0= time.perf_counter()
 
 
 
+
+x_steps = torch.linspace(x_grid_min, x_grid_max, steps=x_res);
+y_steps = torch.linspace(y_grid_min, y_grid_max, steps=y_res);
+z_steps = torch.linspace(z_grid_min, z_grid_max, steps=z_res);
+
+#loc = np.zeros((res, res, res), dtype = quaternion);
+
+loc = np.zeros((res * res * res), dtype = quaternion);
+
+for z in range(res):#z_step in z_steps:
+    for x in range(res):#x_step in x_steps:
+        for y in range(res):#y_step in y_steps:
+            loc[z*res*res + y*res + x] = quaternion(x_steps[x], y_steps[y], z_steps[z], z_w);
 
 
 
@@ -145,30 +146,31 @@ for i in range(z_res):
 
     print(str(i))
 
-    Z.x = x_grid_min;
-
     print("init")
     
     for j in range(x_res):
-        Z.y = y_grid_min;
 
         for k in range(y_res):
         
-            float_slice_a[j*res + k][0] = Z.x;
-            float_slice_a[j*res + k][1] = Z.y;
-            float_slice_a[j*res + k][2] = Z.z;
-            float_slice_a[j*res + k][3] = Z.w;
-            float_slice_b[j*res + k][0] = Z.x;
-            float_slice_b[j*res + k][1] = Z.y;
-            float_slice_b[j*res + k][2] = Z.z;
-            float_slice_b[j*res + k][3] = Z.w;
+            index = j*res + k;
 
-            Z.y += y_step_size;
+            Z = loc[i*res*res + k*res + j];# = quaternion(x_steps[x], y_steps[y], z_steps[z], z_w);
 
-        Z.x += x_step_size;
+            float_slice_a[index][0] = Z.x;
+            float_slice_a[index][1] = Z.y;
+            float_slice_a[index][2] = Z.z;
+            float_slice_a[index][3] = Z.w;
+            float_slice_b[index][0] = Z.x;
+            float_slice_b[index][1] = Z.y;
+            float_slice_b[index][2] = Z.z;
+            float_slice_b[index][3] = Z.w;
+
+        #    Z.y += y_step_size;
+
+       # Z.x += x_step_size;
    
-    float_slice_a.to(device);
-    float_slice_b.to(device);
+    #float_slice_a.to(device);
+    #float_slice_b.to(device);
 
 
     print("done init")
@@ -178,7 +180,7 @@ for i in range(z_res):
 
     for m in range(max_iterations):
 
-        print(m);
+#        print(m);
 
         p = get_predictions();
 
@@ -188,29 +190,34 @@ for i in range(z_res):
             Z.y = y_grid_min;
 
             for k in range(y_res):
-                p[j*res + k][0] += C.x;
-                p[j*res + k][1] += C.y;
-                p[j*res + k][2] += C.z;
-                p[j*res + k][3] += C.w;
 
-                float_slice_magnitude[j][k] = math.sqrt(p[j*res + k][0]*p[j*res + k][0] + p[j*res + k][1]*p[j*res + k][1] + p[j*res + k][2]*p[j*res + k][2] + p[j*res + k][3]*p[j*res + k][3]);
-                float_slice_a[j*res + k][0] = float_slice_b[j*res + k][0] = torch.from_numpy(p)[j*res + k][0];
-                float_slice_a[j*res + k][1] = float_slice_b[j*res + k][1] = torch.from_numpy(p)[j*res + k][1];
-                float_slice_a[j*res + k][2] = float_slice_b[j*res + k][2] = torch.from_numpy(p)[j*res + k][2];
-                float_slice_a[j*res + k][3] = float_slice_b[j*res + k][3] = torch.from_numpy(p)[j*res + k][3];
+                index = j*res + k
+
+                p[index][0] += C.x;
+                p[index][1] += C.y;
+                p[index][2] += C.z;
+                p[index][3] += C.w;
+
+                float_slice_magnitude[j][k] = math.sqrt(p[index][0]*p[index][0] + p[index][1]*p[index][1] + p[index][2]*p[index][2] + p[index][3]*p[index][3]);
+                float_slice_a[index][0] = float_slice_b[index][0] = torch.from_numpy(p)[index][0];
+                float_slice_a[index][1] = float_slice_b[index][1] = torch.from_numpy(p)[index][1];
+                float_slice_a[index][2] = float_slice_b[index][2] = torch.from_numpy(p)[index][2];
+                float_slice_a[index][3] = float_slice_b[index][3] = torch.from_numpy(p)[index][3];
 
                 Z.y += y_step_size;
 
             Z.x += x_step_size;
 
-        float_slice_a.to(device);
-        float_slice_b.to(device);
+        #float_slice_a.to(device);
+        #float_slice_b.to(device);
 
     Z.z += z_step_size;
 
     float_array[i] = float_slice_magnitude;
+"""
+t1 = time.perf_counter()
 
-
+print("Time elapsed: ", t1 - t0)
 
 
 verts, faces, normals, values = measure.marching_cubes(float_array, threshold)

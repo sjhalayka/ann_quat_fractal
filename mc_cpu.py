@@ -2,6 +2,7 @@ import numpy as np
 import math
 import torch
 import os.path
+import time
 
 from numpy import random
 from skimage import measure
@@ -95,7 +96,7 @@ else:
 
 
 
-res = 1000;
+res = 25;
 float_array = np.zeros((res, res, res), np.float32)
 
 x_grid_max = 1.5;
@@ -129,6 +130,10 @@ Z.y = y_grid_min;
 Z.z = z_grid_min;
 Z.w = z_w;
 
+
+t0 = time.perf_counter()
+
+
 for i in range(z_res):
 
     Z.x = x_grid_min;
@@ -145,9 +150,17 @@ for i in range(z_res):
 
             Z.y += y_step_size;
 
-        Z.x += x_step_size;       
+        Z.x += x_step_size;
 
     Z.z += z_step_size;
+
+
+
+
+t1 = time.perf_counter()
+
+print("Time elapsed: ", t1 - t0)
+
 
 verts, faces, normals, values = measure.marching_cubes(float_array, threshold)
 
