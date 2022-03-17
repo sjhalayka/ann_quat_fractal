@@ -18,23 +18,6 @@ print(device)
 num_components = 4; # quaternions
 
 
-class quaternion:
-    x = 0.0;
-    y = 0.0;
-    z = 0.0;
-    w = 0.0;
-
-    def __init__(self, x=0, y=0, z=0, w=0):
-        self.x = x;
-        self.y = y;
-        self.z = z;
-        self.w = w;
-
-    def __str__(self): 
-        return str(self.x) + ", " + str(self.y) + ", " + str(self.z) + ", " + str(self.w);
-
-
-
 
 class Net(torch.nn.Module):
     def __init__(self):
@@ -51,70 +34,67 @@ class Net(torch.nn.Module):
         x = self.predict(x)             # linear output
         return x
 
-@numba.jit
-def calc_slice(float_slice, grid_min, res, Z, C, step_size, p, float_array, i):
 
-    Z.x = grid_min;
+@numba.njit
+def calc_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, C_x, C_y, C_z, C_w, step_size, p, float_array, i):
+
+    Z_x = grid_min;
 
     for j in range(res):
 
-       Z.y = grid_min;
+       Z_y = grid_min;
 
        for k in range(res):
 
            index = j*res + k
 
-           p[index][0] += C.x;
-           p[index][1] += C.y;
-           p[index][2] += C.z;
-           p[index][3] += C.w;
+           p[index][0] += C_x;
+           p[index][1] += C_y;
+           p[index][2] += C_z;
+           p[index][3] += C_w;
 
            float_array[i][j][k] = math.sqrt(p[index][0]*p[index][0] + p[index][1]*p[index][1] + p[index][2]*p[index][2] + p[index][3]*p[index][3]);
    
-           tp = torch.from_numpy(p);
-
-           float_slice[index][0] = tp[index][0];
-           float_slice[index][1] = tp[index][1];
-           float_slice[index][2] = tp[index][2];
-           float_slice[index][3] = tp[index][3];
-           float_slice[index][4] = tp[index][0];
-           float_slice[index][5] = tp[index][1];
-           float_slice[index][6] = tp[index][2];
-           float_slice[index][7] = tp[index][3];
+           float_slice[index][0] = p[index][0];
+           float_slice[index][1] = p[index][1];
+           float_slice[index][2] = p[index][2];
+           float_slice[index][3] = p[index][3];
+           float_slice[index][4] = p[index][0];
+           float_slice[index][5] = p[index][1];
+           float_slice[index][6] = p[index][2];
+           float_slice[index][7] = p[index][3];
   
-           Z.y += step_size;
+           Z_y += step_size;
 
-       Z.x += step_size;
-
-
+       Z_x += step_size;
 
 
 
-@numba.jit
-def init_slice(float_slice, grid_min, res, Z, step_size):
+@numba.njit
+def init_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, step_size):
 
-    Z.x = grid_min;
+    Z_x = grid_min;
 
     for j in range(res):
 
-        Z.y = grid_min;
+        Z_y = grid_min;
 
         for k in range(res):
         
             index = j*res + k;
 
-            float_slice[index][0] = Z.x;
-            float_slice[index][1] = Z.y;
-            float_slice[index][2] = Z.z;
-            float_slice[index][3] = Z.w;
-            float_slice[index][4] = Z.x;
-            float_slice[index][5] = Z.y;
-            float_slice[index][6] = Z.z;
-            float_slice[index][7] = Z.w;
+            float_slice[index][0] = Z_x;
+            float_slice[index][1] = Z_y;
+            float_slice[index][2] = Z_z;
+            float_slice[index][3] = Z_w;
+            float_slice[index][4] = Z_x;
+            float_slice[index][5] = Z_y;
+            float_slice[index][6] = Z_z;
+            float_slice[index][7] = Z_w;
 
-            Z.y += step_size;
+            Z_y += step_size;
 
-        Z.x += step_size;
+        Z_x += step_size;
 
 
 def main():
@@ -125,27 +105,27 @@ def main():
     
     z_w = 0;
 
-    C = quaternion();
-    C.x = 0.3;
-    C.y = 0.5;
-    C.z = 0.4;
-    C.w = 0.2;
+    #C = quaternion();
+    C_x = 0.3;
+    C_y = 0.5;
+    C_z = 0.4;
+    C_w = 0.2;
 
     max_iterations = 8;
     threshold = 4.0;
     
     step_size = (grid_max - grid_min) / (res - 1);
 
-    Z = quaternion();
-    Z.x = grid_min;
-    Z.y = grid_min;
-    Z.z = grid_min;
-    Z.w = z_w;
+    #Z = quaternion();
+    Z_x = grid_min;
+    Z_y = grid_min;
+    Z_z = grid_min;
+    Z_w = z_w;
 
-    float_slice = torch.empty((res* res, 2*num_components), dtype=torch.float32).to(device);
+    float_slice = np.empty((res* res, 2*num_components), dtype=np.float32);
     float_array = np.empty((res, res, res), dtype = np.float32);
 
-    net = Net().to(device)
+    net = Net()#.to(device)
 
     if path.exists('weights_4_100000.pth'):
         net.load_state_dict(torch.load('weights_4_100000.pth'))
@@ -160,18 +140,17 @@ def main():
 
         print(str(i))      
         print("init")
-        init_slice(float_slice, grid_min, res, Z, step_size);
+        init_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, step_size);
         print("done init")
 
         for m in range(max_iterations):
 
             print(m);
 
-            float_slice.to(device)
-            p = net(float_slice).cpu().detach().numpy();
-            calc_slice(float_slice, grid_min, res, Z, C, step_size, p, float_array, i);
+            p = net(torch.from_numpy(float_slice)).detach().numpy();
+            calc_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, C_x, C_y, C_z, C_w, step_size, p, float_array, i);
 
-        Z.z += step_size;
+        Z_z += step_size;
 
 
 
