@@ -12,6 +12,7 @@ from os import path
 
 num_components = 4 # quaternions
 
+
 class quaternion:
     x = 0;
     y = 0;
@@ -67,7 +68,7 @@ def iterate(Z):
 
 
 
-res = 25;
+res = 500;
 float_array = np.zeros((res, res, res), np.float32)
 
 x_grid_max = 1.5;
