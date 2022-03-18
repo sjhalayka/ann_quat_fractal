@@ -99,7 +99,7 @@ def init_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, step_size):
 
 def main():
 
-    res = 100;
+    res = 1000;
     grid_max = 1.5;
     grid_min = -grid_max;
     
@@ -160,7 +160,7 @@ def main():
 
 
 
-    verts, faces, normals, values = measure.marching_cubes(float_array, threshold)
+    verts, faces, normals, values = measure.marching_cubes(float_array, threshold, spacing=(step_size, step_size, step_size))
 
     thefile = open('test_ai.obj', 'w')
     for item in verts:

@@ -57,8 +57,8 @@ def iterate(Z):
         Z = quat_mul(Z, Z);
         Z = quat_add(Z, C);
         
-        if magnitude(Z) >= threshold:
-            break;
+        #if magnitude(Z) >= threshold:
+        #    break;
     
     return magnitude(Z);
 
@@ -68,7 +68,7 @@ def iterate(Z):
 
 
 
-res = 500;
+res = 1000;
 float_array = np.zeros((res, res, res), np.float32)
 
 x_grid_max = 1.5;
@@ -134,7 +134,7 @@ t1 = time.perf_counter()
 print("Time elapsed: ", t1 - t0)
 
 
-verts, faces, normals, values = measure.marching_cubes(float_array, threshold)
+verts, faces, normals, values = measure.marching_cubes(float_array, threshold, spacing=(x_step_size, y_step_size, z_step_size))
 
 thefile = open('test.obj', 'w')
 for item in verts:
