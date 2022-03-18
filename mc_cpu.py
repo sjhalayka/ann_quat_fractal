@@ -1,14 +1,10 @@
 import numpy as np
 import math
-import torch
-import os.path
 import time
 import numba
 
 from numpy import random
 from skimage import measure
-from torch.autograd import Variable
-from os import path
 
 
 device = "cpu"#torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
