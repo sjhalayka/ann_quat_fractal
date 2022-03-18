@@ -32,7 +32,6 @@ def calc_muls(float_slice, res):
            p[index][1] = 2 * float_slice[index][0]*float_slice[index][1];
            p[index][2] = 2 * float_slice[index][0]*float_slice[index][2];
            p[index][3] = 2 * float_slice[index][0]*float_slice[index][3];
-
            
     return p;
 
@@ -42,11 +41,7 @@ def calc_muls(float_slice, res):
 @numba.njit
 def calc_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, C_x, C_y, C_z, C_w, step_size, p, float_array, i):
 
-    Z_x = grid_min;
-
     for j in range(res):
-
-       Z_y = grid_min;
 
        for k in range(res):
 
@@ -67,10 +62,7 @@ def calc_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, C_x, C_y, C_z, C_
            float_slice[index][5] = p[index][1];
            float_slice[index][6] = p[index][2];
            float_slice[index][7] = p[index][3];
-  
-           Z_y += step_size;
-
-       Z_x += step_size;
+ 
 
 
 
