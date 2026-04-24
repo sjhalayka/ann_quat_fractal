@@ -2,10 +2,8 @@ import numpy as np
 import math
 import torch
 from torch.autograd import Variable
-
-
-    import os.path
-    from os import path
+import os.path
+from os import path
 
 
 
