@@ -171,8 +171,8 @@ def main():
 
             print(m);
 
-            #p = calc_muls(float_slice, res)
-            p = net(torch.from_numpy(float_slice)).detach().numpy();
+            #p = calc_muls(float_slice, res) # Ground truth
+            p = net(torch.from_numpy(float_slice)).detach().numpy(); # Approximated
             calc_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, C_x, C_y, C_z, C_w, step_size, p, float_array, i);
 
         Z_z += step_size;
