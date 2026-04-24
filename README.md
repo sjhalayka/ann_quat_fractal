@@ -1,1 +1,1 @@
-Works using Python 3.9.11, numpy 1.21.5, and numba 0.55.1
+Works using Python 3.9.11, numpy 1.21.5, numba 0.55.1, scikit-image 0.26.0
