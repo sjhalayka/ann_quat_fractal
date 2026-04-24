@@ -2,12 +2,19 @@ import numpy as np
 import math
 import time
 import numba
-
+import torch
+import torch.nn as net
+import os.path
 from numpy import random
 from skimage import measure
+from os import path
 
 
-device = "cpu"#torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
 
@@ -93,6 +100,26 @@ def init_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, step_size):
         Z_x += step_size;
 
 
+
+
+
+class Net(torch.nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.hidden1 = torch.nn.Linear(num_components*2, 32*num_components)
+        self.hidden2 = torch.nn.Linear(32*num_components, 16*num_components) 
+        self.hidden3 = torch.nn.Linear(16*num_components, 8*num_components)
+        self.predict = torch.nn.Linear(8*num_components, num_components)
+
+    def forward(self, x):
+        x = torch.tanh(self.hidden1(x))      
+        x = torch.tanh(self.hidden2(x))
+        x = torch.tanh(self.hidden3(x))
+        x = self.predict(x)             # linear output
+        return x
+
+
+
 def main():
 
     res = 300;
@@ -118,7 +145,17 @@ def main():
     Z_z = grid_min;
     Z_w = z_w;
 
-    float_slice = np.empty((res* res, 2*num_components), dtype=np.float64);
+    net = Net()#.to(device)
+
+    if path.exists('weights_4_100000.pth'):
+        net.load_state_dict(torch.load('weights_4_100000.pth'))
+        print("loaded file successfully")
+    else:
+        print("Could not find file...")
+        exit()
+
+
+    float_slice = np.empty((res* res, 2*num_components), dtype=np.float32);
     float_array = np.empty((res, res, res), dtype = np.float32);
 
     t0 = time.perf_counter()
@@ -134,7 +171,8 @@ def main():
 
             print(m);
 
-            p = calc_muls(float_slice, res)# net(torch.from_numpy(float_slice)).detach().numpy();
+            #p = calc_muls(float_slice, res)
+            p = net(torch.from_numpy(float_slice)).detach().numpy();
             calc_slice(float_slice, grid_min, res, Z_x, Z_y, Z_z, Z_w, C_x, C_y, C_z, C_w, step_size, p, float_array, i);
 
         Z_z += step_size;
